@@ -1,0 +1,224 @@
+<?php
+    
+$button = $_GET ['submit'];
+$search = $_GET ['search'];
+$x=0;
+$construct=""; 
+ 
+define("mysql_host_name","localhost");  
+define("mysql_username","root");  
+define("mysql_password","");  
+define("database_name","fcontinue"); 
+define("database_table_name","demande"); 
+  
+if(strlen($search)<=1)
+	echo "Search term too short";
+	
+	else
+	{
+		echo "You searched for <b>$search</b> <hr size='1'></br>";
+		mysql_connect(mysql_host_name,mysql_username,mysql_password);
+		mysql_select_db(database_name);
+    
+		$search_exploded = explode (" ", $search);
+    
+		foreach($search_exploded as $search_each)
+		{
+			$x++;
+			if($x==1)
+				$construct .="module LIKE '%$search_each%'";
+				else
+				$construct .="AND module LIKE '%$search_each%'";
+    
+		}
+  
+		$constructs ="SELECT * FROM ". database_table_name." WHERE $construct";
+		//echo $constructs;exit;
+		$run = mysql_query($constructs);
+    
+		$foundnum = mysql_num_rows($run);
+    
+		if ($foundnum==0)
+		echo "Sorry, there are no matching result for <b>$search</b>.</br></br>1.
+			Try more general words. for example: If you want to search 'how to create a website'
+			then use general keyword like 'create' 'website'</br>2. Try different words with similar
+			meaning</br>3. Please check your spelling";
+		else
+		{
+  
+			echo "$foundnum results found !<p>";
+  
+			$per_page = 2;
+			$start = $_GET['start'];
+			$max_pages = ceil($foundnum / $per_page);
+		
+			if(!$start)
+				
+				$start=0;
+				
+				$query="SELECT * FROM ". database_table_name ." WHERE $construct LIMIT $start, $per_page";
+				
+				//echo $query;//exit;
+				
+				$getquery = mysql_query($query);
+				
+				
+				echo"
+							<table id=\"contribTable\"><!-- Display the content of formation Table-->
+								<!--<caption> Liste des formations Enregistrés </caption>-->
+								
+									<tr>
+										<th>Demandeur d'Action</th>
+										<th>Module Demandé</th>
+										<th>Effectif</th>
+										<th>Durée</th>
+										<th>Bénéficiaires</th>
+										<th>Date Probable</th>
+										<th>Contact Client</th>
+										<th colspan=\"3\" align=\"center\">Extras</th>";
+							
+				
+				
+  
+				while($runrows = mysql_fetch_assoc($getquery))
+				{
+				//echo"<pre>";print_r($runrows);echo"</pre>";
+					//$title = $runrows ['module'];
+					//$desc = $runrows ['demandeur'];
+					//$url = $runrows ['contact'];
+					
+					
+													$id=$runrows['idDemande'];
+													$demandeur=$runrows['demandeur'];
+													$module=ucfirst($runrows['module']);
+													$effectif=ucfirst($runrows['effectif']);
+													$dure=ucfirst($runrows['dure']);
+													$benefit=ucfirst($runrows['benefit']);
+													$dateprob=ucfirst($runrows['dateprob']);
+													$contact=ucfirst($runrows['contact']);
+
+					
+											echo "
+												<tr id=".$id.">
+													
+													<td>$demandeur</td><td>$module</td><td>$effectif</td><td>$dure</td><td>$benefit</td><td>$dateprob</td><td>$contact</td>
+													<td><a href='traitement.php?id=".$id."'>Traitement</a></td>
+													<td><a href='statut.php?id=".$id."'>Statut</a></td>
+													<td id=".$id."><input type='hidden' class='supprimer' value=".$id." />
+														<a href='#' class='delete'>Supprimer</a>
+													</td>
+													
+												</tr>";
+					
+					//echo "
+						//<a href='$url'><b>$title</b></a><br>$desc<br><a href='$url'>$url</a><p>
+						//";
+					
+				}
+  
+				//Pagination Starts 
+    
+				echo "<center>";
+  
+				$prev = $start - $per_page;
+				$next = $start + $per_page;
+                       
+				$adjacents = 3;
+				$last = $max_pages - 1;
+  
+				if($max_pages > 1)
+				{  
+				//previous button
+				if (!($start<=0))
+					echo " <a href='search_results?search=$search&submit=Search+source+code&start=$prev'>Prev</a> ";   
+          
+					//pages
+					if ($max_pages < 7 + ($adjacents * 2))   //not enough pages to bother breaking it up
+					{
+						$i = 0;  
+						for ($counter = 1; $counter <= $max_pages; $counter++)
+						{
+							if ($i == $start)
+							{
+								echo " <a href='search_results.php?search=$search&submit=Search+source+code&start=$i'><b>$counter</b></a> ";
+							}
+							else 
+							{
+								echo " <a href='search_results.php?search=$search&submit=Search+source+code&start=$i'>$counter</a> ";
+							} 
+								$i = $i + $per_page;                
+						}
+					}
+					elseif($max_pages > 5 + ($adjacents * 2))    //enough pages to hide some
+					{
+						//close to beginning; only hide later pages
+						if(($start/$per_page) < 1 + ($adjacents * 2))       
+						{
+							$i = 0;
+							for ($counter = 1; $counter < 4 + ($adjacents * 2); $counter++)
+							{
+								if ($i == $start)
+								{
+									echo " <a href='search_results.php?search=$search&submit=Search+source+code&start=$i'><b>$counter</b></a> ";
+								}
+								else 
+								{
+									echo " <a href='search_results.php?search=$search&submit=Search+source+code&start=$i'>$counter</a> ";
+								}
+										$i = $i + $per_page;                                      
+							}
+                          
+						}
+						//in middle; hide some front and some back
+						elseif($max_pages - ($adjacents * 2) > ($start / $per_page) && ($start / $per_page) > ($adjacents * 2))
+						{
+							echo " <a href='search_results.php?search=$search&submit=Search+source+code&start=0'>1</a> ";
+							
+							echo " <a href='search_results.php?search=$search&submit=Search+source+code&start=$per_page'>2</a> .... ";
+ 
+							$i = $start;                
+							for ($counter = ($start/$per_page)+1; $counter < ($start / $per_page) + $adjacents + 2; $counter++)
+							{
+								if ($i == $start)
+								{
+									echo " <a href='search_results?search=$search&submit=Search+source+code&start=$i'><b>$counter</b></a> ";
+								}
+								else {
+									echo " <a href='search_results?search=$search&submit=Search+source+code&start=$i'>$counter</a> ";
+								}  
+								$i = $i + $per_page;               
+							}
+                                  
+						}
+						//close to end; only hide early pages
+						else
+						{
+							echo " <a href='search_results?search=$search&submit=Search+source+code&start=0'>1</a> ";
+							
+							echo " <a href='search_results?search=$search&submit=Search+source+code&start=$per_page'>2</a> .... ";
+ 
+							$i = $start;               
+							
+							for ($counter = ($start / $per_page) + 1; $counter <= $max_pages; $counter++)
+							{
+								if ($i == $start)
+								{
+									echo " <a href='search_results?search=$search&submit=Search+source+code&start=$i'><b>$counter</b></a> ";
+								}
+								else 
+								{
+									echo " <a href='search_results?search=$search&submit=Search+source+code&start=$i'>$counter</a> ";  
+								}
+								$i = $i + $per_page;             
+							}
+						}
+					}
+          
+					//next button
+					if (!($start >=$foundnum-$per_page))
+						echo " <a href='search_results?search=$search&submit=Search+source+code&start=$next'>Next</a> ";   
+				}  
+			echo "</center>";
+		}
+	}
+?>
